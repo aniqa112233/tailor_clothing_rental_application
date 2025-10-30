@@ -19,10 +19,43 @@ class _ImageUploaderState extends State<ImageUploader> {
   final _priceC = TextEditingController();
   bool _loading = false;
 
+  final ImagePicker _picker = ImagePicker();
+
+  /// ✅ Show camera / gallery options (like TailorProfileScreen)
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) setState(() => _image = File(picked.path));
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text('Take Photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                final picked = await _picker.pickImage(
+                    source: ImageSource.camera, imageQuality: 80);
+                if (picked != null) {
+                  setState(() => _image = File(picked.path));
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.green),
+              title: const Text('Choose from Gallery'),
+              onTap: () async {
+                Navigator.pop(context);
+                final picked = await _picker.pickImage(
+                    source: ImageSource.gallery, imageQuality: 80);
+                if (picked != null) {
+                  setState(() => _image = File(picked.path));
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _uploadDesign() async {
@@ -62,7 +95,7 @@ class _ImageUploaderState extends State<ImageUploader> {
         child: Column(
           children: [
             GestureDetector(
-              onTap: _pickImage,
+              onTap: _pickImage, // ✅ tap to open camera/gallery options
               child: Container(
                 height: 180,
                 width: double.infinity,
@@ -72,17 +105,24 @@ class _ImageUploaderState extends State<ImageUploader> {
                 ),
                 child: _image == null
                     ? const Center(child: Text('Tap to select image'))
-                    : Image.file(
-                        _image!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(child: Icon(Icons.broken_image, size: 50));
-                        },
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          _image!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                                child: Icon(Icons.broken_image, size: 50));
+                          },
+                        ),
                       ),
               ),
             ),
             const SizedBox(height: 16),
-            TextField(controller: _titleC, decoration: const InputDecoration(labelText: 'Design Title')),
+            TextField(
+              controller: _titleC,
+              decoration: const InputDecoration(labelText: 'Design Title'),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _priceC,
@@ -101,4 +141,3 @@ class _ImageUploaderState extends State<ImageUploader> {
     );
   }
 }
-

@@ -44,5 +44,3 @@ class DesignCard extends StatelessWidget {
     );
   }
 }
-
-
