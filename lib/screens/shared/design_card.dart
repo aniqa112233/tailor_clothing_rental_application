@@ -1,49 +1,4 @@
-// import 'package:flutter/material.dart';
 
-// class DesignCard extends StatelessWidget {
-//   final Map<String, dynamic> design;
-//   const DesignCard({super.key, required this.design});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Card(
-//       margin: const EdgeInsets.all(8),
-//       child: ListTile(
-//         leading: Image.file(design['image'], width: 60, fit: BoxFit.cover),
-//         title: Text(design['title'] ?? 'Untitled'),
-//         subtitle: Text('Price: PKR ${design['price'] ?? '-'}'),
-//       ),
-//     );
-//   }
-// }100000000000000000
-// import 'package:flutter/material.dart';
-// import 'dart:io';
-
-// class DesignCard extends StatelessWidget {
-//   final Map<String, dynamic> design;
-//   const DesignCard({super.key, required this.design});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Card(
-//       margin: const EdgeInsets.all(8),
-//       child: ListTile(
-//         leading: design['image'] != null
-//             ? Image.file(
-//                 design['image'],
-//                 width: 60,
-//                 fit: BoxFit.cover,
-//                 errorBuilder: (context, error, stackTrace) {
-//                   return const Icon(Icons.broken_image, size: 50);
-//                 },
-//               )
-//             : const Icon(Icons.image_not_supported, size: 50),
-//         title: Text(design['title'] ?? 'Untitled'),
-//         subtitle: Text('Price: PKR ${design['price'] ?? '-'}'),
-//       ),
-//     );
-//   }
-// }2000000000000000000000000
 import 'package:flutter/material.dart';
 
 class DesignCard extends StatelessWidget {
