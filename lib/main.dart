@@ -91,7 +91,6 @@ class TailorApp extends StatelessWidget {
     );
   }
 }
-
 // === unchanged AuthGate ===
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
