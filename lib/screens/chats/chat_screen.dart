@@ -2883,6 +2883,468 @@
 //     );
 //   }
 // }
+// import 'package:flutter/material.dart';
+// import 'package:intl/intl.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:tailor_clothing_application/utils/profile_helper.dart';
+
+// class ChatScreen extends StatefulWidget {
+//   final String orderId;
+//   final String tailorId;
+//   final String customerId;
+
+//   const ChatScreen({
+//     super.key,
+//     required this.orderId,
+//     required this.tailorId,
+//     required this.customerId,
+//   });
+
+//   @override
+//   State<ChatScreen> createState() => _ChatScreenState();
+// }
+
+// class _ChatScreenState extends State<ChatScreen> {
+//   final supabase = Supabase.instance.client;
+//   final TextEditingController _msgController = TextEditingController();
+//   List<Map<String, dynamic>> _messages = [];
+//   RealtimeChannel? _channel;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchMessages();
+//     _subscribeToMessages();
+//   }
+
+//   /// ✅ Fetch all messages for this order between these two users
+//   Future<void> _fetchMessages() async {
+//     final currentUser = supabase.auth.currentUser;
+//     if (currentUser == null) return;
+
+//     final response = await supabase
+//         .from('messages')
+//         .select()
+//         .eq('order_id', widget.orderId)
+//         .order('created_at', ascending: true);
+
+//     setState(() {
+//       _messages = List<Map<String, dynamic>>.from(response);
+//     });
+
+//     print("✅ Loaded ${_messages.length} messages");
+//   }
+
+//   /// ✅ Subscribe to realtime new messages
+//   void _subscribeToMessages() {
+//     _channel = supabase.channel('public:messages');
+//     _channel!
+//         .onPostgresChanges(
+//           event: PostgresChangeEvent.insert,
+//           schema: 'public',
+//           table: 'messages',
+//           callback: (payload) {
+//             final newMsg = payload.newRecord;
+//             if (newMsg == null) return;
+
+//             // Filter messages by same order_id
+//             if (newMsg['order_id'] == widget.orderId) {
+//               setState(() {
+//                 _messages.add(Map<String, dynamic>.from(newMsg));
+//               });
+//               print("💬 New message added: ${newMsg['message']}");
+//             }
+//           },
+//         )
+//         .subscribe();
+//   }
+
+//   /// ✅ Send Message
+//   Future<void> _sendMessage() async {
+//     final text = _msgController.text.trim();
+//     if (text.isEmpty) return;
+
+//     final currentUser = supabase.auth.currentUser;
+//     if (currentUser == null) return;
+
+//     final senderId = currentUser.id;
+//     final receiverId =
+//         senderId == widget.customerId ? widget.tailorId : widget.customerId;
+
+//     // 👇 Debug prints to trace IDs
+//     print('📩 senderId: $senderId');
+//     print('📩 receiverId: $receiverId');
+//     print('📦 orderId: ${widget.orderId}');
+
+//     try {
+//       // ✅ Ensure both users exist in profiles
+//       await ensureUserProfileExists(senderId, currentUser.email);
+//       await ensureUserProfileExists(receiverId, null);
+
+//       // ✅ Insert the message
+//       await supabase.from('messages').insert({
+//         'sender_id': senderId,
+//         'receiver_id': receiverId,
+//         'order_id': widget.orderId,
+//         'message': text,
+//         'created_at': DateTime.now().toIso8601String(),
+//       });
+
+//       _msgController.clear();
+
+//       // ✅ Immediately show in local UI (no need to wait for realtime)
+//       setState(() {
+//         _messages.add({
+//           'sender_id': senderId,
+//           'receiver_id': receiverId,
+//           'order_id': widget.orderId,
+//           'message': text,
+//           'created_at': DateTime.now().toIso8601String(),
+//         });
+//       });
+//     } catch (e) {
+//       debugPrint('❌ Error sending message: $e');
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Message failed: $e')),
+//       );
+//     }
+//   }
+
+//   @override
+//   void dispose() {
+//     _msgController.dispose();
+//     _channel?.unsubscribe();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Chat')),
+//       body: Column(
+//         children: [
+//           Expanded(
+//             child: _messages.isEmpty
+//                 ? const Center(child: Text("No messages yet"))
+//                 : ListView.builder(
+//                     padding: const EdgeInsets.all(10),
+//                     itemCount: _messages.length,
+//                     itemBuilder: (context, index) {
+//                       final msg = _messages[index];
+//                       final isMe =
+//                           msg['sender_id'] == supabase.auth.currentUser?.id;
+//                       final time = DateFormat.Hm().format(
+//                         DateTime.tryParse(msg['created_at'] ?? '') ??
+//                             DateTime.now(),
+//                       );
+
+//                       return Align(
+//                         alignment: isMe
+//                             ? Alignment.centerRight
+//                             : Alignment.centerLeft,
+//                         child: Container(
+//                           margin: const EdgeInsets.symmetric(vertical: 4),
+//                           padding: const EdgeInsets.all(10),
+//                           decoration: BoxDecoration(
+//                             color:
+//                                 isMe ? Colors.blueAccent : Colors.grey[300],
+//                             borderRadius: BorderRadius.circular(10),
+//                           ),
+//                           child: Column(
+//                             crossAxisAlignment: CrossAxisAlignment.end,
+//                             children: [
+//                               Text(
+//                                 msg['message'] ?? '',
+//                                 style: TextStyle(
+//                                   color: isMe ? Colors.white : Colors.black,
+//                                   fontSize: 15,
+//                                 ),
+//                               ),
+//                               const SizedBox(height: 4),
+//                               Text(
+//                                 time,
+//                                 style: TextStyle(
+//                                   color: isMe
+//                                       ? Colors.white70
+//                                       : Colors.black54,
+//                                   fontSize: 10,
+//                                 ),
+//                               ),
+//                             ],
+//                           ),
+//                         ),
+//                       );
+//                     },
+//                   ),
+//           ),
+//           const Divider(height: 1),
+//           SafeArea(
+//             child: Padding(
+//               padding:
+//                   const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+//               child: Row(
+//                 children: [
+//                   Expanded(
+//                     child: TextField(
+//                       controller: _msgController,
+//                       decoration: const InputDecoration(
+//                         hintText: 'Type a message...',
+//                         border: OutlineInputBorder(),
+//                         isDense: true,
+//                       ),
+//                     ),
+//                   ),
+//                   const SizedBox(width: 8),
+//                   IconButton(
+//                     icon: const Icon(Icons.send),
+//                     color: Colors.blueAccent,
+//                     onPressed: _sendMessage,
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+// import 'package:flutter/material.dart';
+// import 'package:intl/intl.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:tailor_clothing_application/utils/profile_helper.dart';
+
+// class ChatScreen extends StatefulWidget {
+//   final String orderId;
+//   final String tailorId;
+//   final String customerId;
+
+//   const ChatScreen({
+//     super.key,
+//     required this.orderId,
+//     required this.tailorId,
+//     required this.customerId,
+//   });
+
+//   @override
+//   State<ChatScreen> createState() => _ChatScreenState();
+// }
+
+// class _ChatScreenState extends State<ChatScreen> {
+//   final supabase = Supabase.instance.client;
+//   final TextEditingController _msgController = TextEditingController();
+//   List<Map<String, dynamic>> _messages = [];
+//   RealtimeChannel? _channel;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchMessages();
+//     _subscribeToMessages();
+//   }
+
+//   /// ✅ Fetch all messages for this order between these two users
+//   Future<void> _fetchMessages() async {
+//     final currentUser = supabase.auth.currentUser;
+//     if (currentUser == null) return;
+
+//     final response = await supabase
+//         .from('messages')
+//         .select()
+//         .eq('order_id', widget.orderId)
+//         .order('created_at', ascending: true);
+
+//     setState(() {
+//       _messages = List<Map<String, dynamic>>.from(response);
+//     });
+
+//     print("✅ Loaded ${_messages.length} messages");
+//   }
+
+//   /// ✅ Subscribe to realtime new messages
+//   void _subscribeToMessages() {
+//     _channel = supabase.channel('public:messages');
+//     _channel!
+//         .onPostgresChanges(
+//           event: PostgresChangeEvent.insert,
+//           schema: 'public',
+//           table: 'messages',
+//           callback: (payload) {
+//             final newMsg = payload.newRecord;
+//             if (newMsg == null) return;
+
+//             // Filter messages by same order_id
+//             if (newMsg['order_id'] == widget.orderId) {
+//               setState(() {
+//                 _messages.add(Map<String, dynamic>.from(newMsg));
+//               });
+//               print("💬 New message added: ${newMsg['message']}");
+//             }
+//           },
+//         )
+//         .subscribe();
+//   }
+
+//   /// ✅ Send Message
+//   Future<void> _sendMessage() async {
+//     final text = _msgController.text.trim();
+//     if (text.isEmpty) return;
+
+//     final currentUser = supabase.auth.currentUser;
+//     if (currentUser == null) return;
+
+//     final senderId = currentUser.id;
+//     final receiverId =
+//         senderId == widget.customerId ? widget.tailorId : widget.customerId;
+
+//     // 👇 Debug prints to trace IDs
+//     print('📩 senderId: $senderId');
+//     print('📩 receiverId: $receiverId');
+//     print('📦 orderId: ${widget.orderId}');
+
+//     try {
+//       // ✅ Ensure both users exist in profiles
+//       await ensureUserProfileExists(senderId, currentUser.email);
+//       await ensureUserProfileExists(receiverId, null);
+
+//       // ✅ Insert the message
+//       await supabase.from('messages').insert({
+//         'sender_id': senderId,
+//         'receiver_id': receiverId,
+//         'order_id': widget.orderId,
+//         'message': text,
+//         'created_at': DateTime.now().toIso8601String(),
+//       });
+
+//       _msgController.clear();
+
+//       // ✅ Immediately show in local UI
+//       setState(() {
+//         _messages.add({
+//           'sender_id': senderId,
+//           'receiver_id': receiverId,
+//           'order_id': widget.orderId,
+//           'message': text,
+//           'created_at': DateTime.now().toIso8601String(),
+//         });
+//       });
+//     } catch (e) {
+//       debugPrint('❌ Error sending message: $e');
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Message failed: $e')),
+//       );
+//     }
+//   }
+
+//   @override
+//   void dispose() {
+//     _msgController.dispose();
+//     _channel?.unsubscribe();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       resizeToAvoidBottomInset:
+//           true, // ✅ allows screen to adjust when keyboard opens
+//       appBar: AppBar(title: const Text('Chat')),
+//       body: SafeArea(
+//         child: Column(
+//           children: [
+//             // ✅ Messages List
+//             Expanded(
+//               child: _messages.isEmpty
+//                   ? const Center(child: Text("No messages yet"))
+//                   : ListView.builder(
+//                       padding: const EdgeInsets.all(10),
+//                       itemCount: _messages.length,
+//                       reverse:
+//                           false, // keep newest messages at bottom like WhatsApp
+//                       itemBuilder: (context, index) {
+//                         final msg = _messages[index];
+//                         final isMe =
+//                             msg['sender_id'] == supabase.auth.currentUser?.id;
+//                         final time = DateFormat.Hm().format(
+//                           DateTime.tryParse(msg['created_at'] ?? '') ??
+//                               DateTime.now(),
+//                         );
+
+//                         return Align(
+//                           alignment: isMe
+//                               ? Alignment.centerRight
+//                               : Alignment.centerLeft,
+//                           child: Container(
+//                             margin: const EdgeInsets.symmetric(vertical: 4),
+//                             padding: const EdgeInsets.all(10),
+//                             decoration: BoxDecoration(
+//                               color:
+//                                   isMe ? Colors.blueAccent : Colors.grey[300],
+//                               borderRadius: BorderRadius.circular(10),
+//                             ),
+//                             child: Column(
+//                               crossAxisAlignment: CrossAxisAlignment.end,
+//                               children: [
+//                                 Text(
+//                                   msg['message'] ?? '',
+//                                   style: TextStyle(
+//                                     color:
+//                                         isMe ? Colors.white : Colors.black87,
+//                                     fontSize: 15,
+//                                   ),
+//                                 ),
+//                                 const SizedBox(height: 4),
+//                                 Text(
+//                                   time,
+//                                   style: TextStyle(
+//                                     color:
+//                                         isMe ? Colors.white70 : Colors.black54,
+//                                     fontSize: 10,
+//                                   ),
+//                                 ),
+//                               ],
+//                             ),
+//                           ),
+//                         );
+//                       },
+//                     ),
+//             ),
+
+//             // ✅ Message Input Field
+//             const Divider(height: 1),
+//             Container(
+//               color: Colors.white,
+//               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+//               child: SafeArea(
+//                 child: Row(
+//                   children: [
+//                     Expanded(
+//                       child: TextField(
+//                         controller: _msgController,
+//                         decoration: const InputDecoration(
+//                           hintText: 'Type a message...',
+//                           border: OutlineInputBorder(),
+//                           isDense: true,
+//                         ),
+//                         onSubmitted: (_) => _sendMessage(),
+//                       ),
+//                     ),
+//                     const SizedBox(width: 8),
+//                     IconButton(
+//                       icon: const Icon(Icons.send),
+//                       color: Colors.blueAccent,
+//                       onPressed: _sendMessage,
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -2909,6 +3371,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _msgController = TextEditingController();
   List<Map<String, dynamic>> _messages = [];
   RealtimeChannel? _channel;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -2932,6 +3395,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _messages = List<Map<String, dynamic>>.from(response);
     });
 
+    _scrollToBottom();
     print("✅ Loaded ${_messages.length} messages");
   }
 
@@ -2952,11 +3416,20 @@ class _ChatScreenState extends State<ChatScreen> {
               setState(() {
                 _messages.add(Map<String, dynamic>.from(newMsg));
               });
+              _scrollToBottom();
               print("💬 New message added: ${newMsg['message']}");
             }
           },
         )
         .subscribe();
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
   }
 
   /// ✅ Send Message
@@ -2971,7 +3444,6 @@ class _ChatScreenState extends State<ChatScreen> {
     final receiverId =
         senderId == widget.customerId ? widget.tailorId : widget.customerId;
 
-    // 👇 Debug prints to trace IDs
     print('📩 senderId: $senderId');
     print('📩 receiverId: $receiverId');
     print('📦 orderId: ${widget.orderId}');
@@ -2992,7 +3464,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _msgController.clear();
 
-      // ✅ Immediately show in local UI (no need to wait for realtime)
+      // ✅ Immediately show in local UI
       setState(() {
         _messages.add({
           'sender_id': senderId,
@@ -3002,6 +3474,8 @@ class _ChatScreenState extends State<ChatScreen> {
           'created_at': DateTime.now().toIso8601String(),
         });
       });
+
+      _scrollToBottom();
     } catch (e) {
       debugPrint('❌ Error sending message: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -3014,97 +3488,109 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _msgController.dispose();
     _channel?.unsubscribe();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset:
+          true, // ✅ Screen adjusts when keyboard opens
       appBar: AppBar(title: const Text('Chat')),
-      body: Column(
-        children: [
-          Expanded(
-            child: _messages.isEmpty
-                ? const Center(child: Text("No messages yet"))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(10),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      final isMe =
-                          msg['sender_id'] == supabase.auth.currentUser?.id;
-                      final time = DateFormat.Hm().format(
-                        DateTime.tryParse(msg['created_at'] ?? '') ??
-                            DateTime.now(),
-                      );
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ✅ Messages List
+            Expanded(
+              child: _messages.isEmpty
+                  ? const Center(child: Text("No messages yet"))
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(10),
+                      itemCount: _messages.length,
+                      reverse: false,
+                      itemBuilder: (context, index) {
+                        final msg = _messages[index];
+                        final isMe =
+                            msg['sender_id'] == supabase.auth.currentUser?.id;
+                        final time = DateFormat.Hm().format(
+                          DateTime.tryParse(msg['created_at'] ?? '') ??
+                              DateTime.now(),
+                        );
 
-                      return Align(
-                        alignment: isMe
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color:
-                                isMe ? Colors.blueAccent : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                msg['message'] ?? '',
-                                style: TextStyle(
-                                  color: isMe ? Colors.white : Colors.black,
-                                  fontSize: 15,
+                        return Align(
+                          alignment: isMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color:
+                                  isMe ? Colors.blueAccent : Colors.grey[300],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  msg['message'] ?? '',
+                                  style: TextStyle(
+                                    color:
+                                        isMe ? Colors.white : Colors.black87,
+                                    fontSize: 15,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                time,
-                                style: TextStyle(
-                                  color: isMe
-                                      ? Colors.white70
-                                      : Colors.black54,
-                                  fontSize: 10,
+                                const SizedBox(height: 4),
+                                Text(
+                                  time,
+                                  style: TextStyle(
+                                    color:
+                                        isMe ? Colors.white70 : Colors.black54,
+                                    fontSize: 10,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                        );
+                      },
+                    ),
+            ),
+
+            // ✅ Input Field (Fixed Overflow)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _msgController,
+                        decoration: const InputDecoration(
+                          hintText: 'Type a message...',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         ),
-                      );
-                    },
-                  ),
-          ),
-          const Divider(height: 1),
-          SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _msgController,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message...',
-                        border: OutlineInputBorder(),
-                        isDense: true,
+                        onSubmitted: (_) => _sendMessage(),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    color: Colors.blueAccent,
-                    onPressed: _sendMessage,
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.send),
+                      color: Colors.blueAccent,
+                      onPressed: _sendMessage,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
