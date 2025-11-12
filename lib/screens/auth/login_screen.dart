@@ -5,7 +5,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/primary_button.dart';
 import '../../utils/app_theme.dart';
-import '../../utils/profile_helper.dart'; // ✅ Added
+import '../../utils/profile_helper.dart'; // Ensure this exists
 import '../../main.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -47,7 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(_error!, style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 12),
 
-            // Email Login Button
             PrimaryButton(
               label: 'Login',
               loading: _loading,
@@ -60,21 +59,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 final ok = await auth.login(
                   email: _emailC.text.trim(),
                   password: _passwordC.text,
+                  context: context, // ✅ Required context added
                 );
 
                 setState(() => _loading = false);
 
-                if (ok && mounted) {
-                  // ✅ Auto ensure profile after login
-                  await ensureUserProfileExists();
-                  Navigator.pushReplacementNamed(context, Routes.dashboard);
-                } else {
+                if (!ok && mounted) {
                   setState(() => _error = 'Invalid credentials!');
                 }
               },
             ),
             const SizedBox(height: 20),
-
             const Text('Or login with:'),
             const SizedBox(height: 10),
             ElevatedButton.icon(
@@ -89,12 +84,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               onPressed: () async {
                 await auth.signInWithGoogle(context);
-                // ✅ Also ensure Google user profile
-                await ensureUserProfileExists();
+                await ensureUserProfileExists(); // Ensure profile
               },
             ),
             const SizedBox(height: 12),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

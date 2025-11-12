@@ -39,7 +39,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             TextField(
               controller: _emailC,
               keyboardType: TextInputType.emailAddress,
-              enabled: false, // ✅ replaced readOnly with enabled:false
+              enabled: false,
               decoration: const InputDecoration(labelText: 'Email'),
             ),
             const SizedBox(height: 12),
@@ -92,7 +92,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               loading: _loading,
               onPressed: () async {
                 setState(() => _loading = true);
-                await auth.saveProfile(
+                final ok = await auth.saveProfile(
                   email: _emailC.text.trim(),
                   profile: {
                     'name': _nameC.text.trim(),
@@ -106,7 +106,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   },
                 );
                 setState(() => _loading = false);
-                if (mounted) {
+                if (mounted && ok) {
                   Navigator.pushReplacementNamed(context, Routes.dashboard);
                 }
               },

@@ -4,23 +4,24 @@ import 'package:provider/provider.dart';
 import 'package:tailor_clothing_application/providers/catalog_provider.dart';
 import 'package:tailor_clothing_application/providers/tailor_provider.dart';
 import 'package:tailor_clothing_application/providers/auth_provider.dart';
+import 'package:tailor_clothing_application/providers/order_provider.dart';
+import 'package:tailor_clothing_application/screens/tailor/tailor_dashboard_screen.dart';
 import 'package:tailor_clothing_application/utils/app_theme.dart';
 import 'package:tailor_clothing_application/utils/supabase_config.dart';
 
-// === Auth & Dashboard ===
+// Screens
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/auth/role_selection_screen.dart';
 import 'screens/profile/profile_setup_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 
-// === Catalog Module ===
+// Catalog
 import 'screens/catalog/catalog_home_screen.dart';
 import 'screens/catalog/upload_custom_design_screen.dart';
 import 'screens/catalog/approve_designs_screen.dart';
 
-// === 🧾 Order Management Module ===
-import 'package:tailor_clothing_application/providers/order_provider.dart';
+// Order
 import 'screens/order/order_list_screen.dart';
 import 'screens/order/order_create_screen.dart';
 import 'screens/order/order_details_screen.dart';
@@ -43,7 +44,7 @@ class TailorApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TailorProvider()),
         ChangeNotifierProvider(create: (_) => CatalogProvider()),
-        ChangeNotifierProvider(create: (_) => OrderProvider()), // ✅ Added OrderProvider
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -51,19 +52,15 @@ class TailorApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         home: const AuthGate(),
         routes: {
-          // === Auth Routes ===
           Routes.login: (_) => const LoginScreen(),
           Routes.signup: (_) => const SignupScreen(),
           Routes.roleSelection: (_) => const RoleSelectionScreen(),
           Routes.profileSetup: (_) => const ProfileSetupScreen(),
           Routes.dashboard: (_) => const DashboardScreen(),
-
-          // === Catalog Module Routes ===
+          Routes.tailorDashboard: (_) => const TailorDashboardScreen(),
           Routes.catalogHome: (_) => const CatalogHomeScreen(),
           Routes.uploadDesign: (_) => const UploadCustomDesignScreen(),
           Routes.approveDesigns: (_) => const ApproveDesignsScreen(),
-
-          // === 🧾 Order Management Routes ===
           Routes.orderList: (_) {
             final user = SupabaseConfig.client.auth.currentUser;
             final userId = user?.id ?? '';
@@ -91,7 +88,8 @@ class TailorApp extends StatelessWidget {
     );
   }
 }
-// === unchanged AuthGate ===
+
+// -------------------- AuthGate --------------------
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
   @override
@@ -100,6 +98,7 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
@@ -110,39 +109,49 @@ class _AuthGateState extends State<AuthGate> {
 
       if (session != null) {
         _navigated = true;
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          Routes.dashboard,
-          (route) => false,
-        );
+        final profileData = await SupabaseConfig.client
+            .from('profiles')
+            .select()
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+        final role = profileData?['role'];
+        if (role == 'tailor') {
+          Navigator.pushNamedAndRemoveUntil(
+              context, Routes.tailorDashboard, (route) => false);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+              context, Routes.dashboard, (route) => false);
+        }
       } else {
         _navigated = true;
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          Routes.login,
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, Routes.login, (route) => false);
       }
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final session = SupabaseConfig.client.auth.currentSession;
       if (!mounted || _navigated) return;
 
       if (session != null) {
         _navigated = true;
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          Routes.dashboard,
-          (route) => false,
-        );
+        final profileData = await SupabaseConfig.client
+            .from('profiles')
+            .select()
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+        final role = profileData?['role'];
+        if (role == 'tailor') {
+          Navigator.pushNamedAndRemoveUntil(
+              context, Routes.tailorDashboard, (route) => false);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+              context, Routes.dashboard, (route) => false);
+        }
       } else {
         _navigated = true;
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          Routes.login,
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, Routes.login, (route) => false);
       }
     });
   }
@@ -156,21 +165,19 @@ class _AuthGateState extends State<AuthGate> {
   }
 }
 
-// === Updated Routes class ===
+// -------------------- Routes --------------------
 class Routes {
-  // === Auth ===
   static const login = '/login';
   static const signup = '/signup';
   static const roleSelection = '/role-select';
   static const profileSetup = '/profile-setup';
-  static const dashboard = '/dashboard';
+  static const dashboard = '/dashboard'; // Customer
+  static const tailorDashboard = '/tailor-dashboard'; // Tailor
 
-  // === Catalog ===
   static const catalogHome = '/catalog';
   static const uploadDesign = '/upload-design';
   static const approveDesigns = '/approve-designs';
 
-  // === 🧾 Order Management ===
   static const orderList = '/orders';
   static const orderCreate = '/order-create';
   static const orderDetails = '/order-details';

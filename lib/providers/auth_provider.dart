@@ -19,7 +19,7 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? get profile => _profile;
 
   // -------------------------
-  // EMAIL SIGNUP (Safe)
+  // EMAIL SIGNUP
   // -------------------------
   Future<bool> signup({
     required String email,
@@ -38,14 +38,12 @@ class AuthProvider extends ChangeNotifier {
 
       _userId = user.id;
 
-      // ✅ Insert profile safely (RLS compatible)
       await supabase.rpc('ensure_profile_exists', params: {
         'p_user_id': _userId,
         'p_email': email,
         'p_role': role,
       });
 
-      // ✅ Tailor auto create
       if (role == 'tailor') {
         await supabase.rpc('ensure_tailor_exists', params: {
           'p_user_id': _userId,
@@ -70,6 +68,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login({
     required String email,
     required String password,
+    required BuildContext context, // ✅ context required
   }) async {
     _loading = true;
     notifyListeners();
@@ -88,6 +87,9 @@ class AuthProvider extends ChangeNotifier {
 
       _profile = profileData;
       _role = profileData?['role'];
+
+      // Navigate after login
+      Navigator.pushReplacementNamed(context, Routes.dashboard);
       return true;
     } catch (e, st) {
       debugPrint('❌ login error: $e');
@@ -100,7 +102,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // -------------------------
-  // GOOGLE SIGN-IN (Safe)
+  // GOOGLE SIGN-IN
   // -------------------------
   Future<User?> signInWithGoogle(BuildContext context) async {
     try {
@@ -132,20 +134,16 @@ class AuthProvider extends ChangeNotifier {
       if (user == null) return null;
 
       _userId = user.id;
+      _role = 'customer';
 
-      // ✅ RLS-safe profile ensure
+      // Ensure profile exists
       await supabase.rpc('ensure_profile_exists', params: {
         'p_user_id': _userId,
         'p_email': googleUser.email,
         'p_role': 'customer',
       });
 
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        Routes.dashboard,
-        (route) => false,
-      );
-
+      Navigator.pushReplacementNamed(context, Routes.dashboard);
       notifyListeners();
       return user;
     } catch (e, st) {
@@ -178,6 +176,17 @@ class AuthProvider extends ChangeNotifier {
         'updated_at': DateTime.now().toIso8601String(),
       });
 
+      _profile = {
+        'id': userId,
+        'email': email,
+        'name': profile['name'],
+        'address': profile['address'],
+        'role': profile['role'],
+        'measurements': profile['measurements'],
+      };
+      _role = profile['role'];
+
+      notifyListeners();
       return true;
     } catch (e, st) {
       debugPrint('❌ saveProfile error: $e');
@@ -189,7 +198,7 @@ class AuthProvider extends ChangeNotifier {
   // -------------------------
   // LOGOUT
   // -------------------------
-  Future<void> logout() async {
+  Future<void> logout(BuildContext context) async {
     try {
       await GoogleSignIn().disconnect();
     } catch (_) {}
@@ -198,9 +207,12 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('⚠️ signOut error: $e');
     }
+
     _userId = null;
     _role = null;
     _profile = null;
     notifyListeners();
+
+    Navigator.pushReplacementNamed(context, Routes.login);
   }
 }
