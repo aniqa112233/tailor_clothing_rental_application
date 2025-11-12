@@ -1,4 +1,4 @@
-// lib/models/order_model.dart
+
 import 'package:flutter/foundation.dart';
 
 class OrderModel {
@@ -35,7 +35,9 @@ class OrderModel {
       tailorId: json['tailor_id'] as String?,
       orderType: json['order_type'] as String,
       serviceId: json['service_id'] as String,
-      measurements: (json['measurements'] as Map?)?.cast<String, dynamic>(),
+      measurements: (json['measurements'] is Map)
+          ? (json['measurements'] as Map).cast<String, dynamic>()
+          : null,
       status: json['status'] as String,
       deliveryDate: json['delivery_date'] != null
           ? DateTime.parse(json['delivery_date'] as String)

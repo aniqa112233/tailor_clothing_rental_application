@@ -1,5 +1,4 @@
 
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,7 +16,7 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
   String _orderType = 'stitching';
   String? _selectedTailorId;
   String? _selectedServiceId;
-  Map<String, dynamic>? _measurements;
+  String? _measurements;
   DateTime? _deliveryDate;
   double _totalAmount = 0.0;
 
@@ -26,7 +25,9 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
   bool _loading = false;
 
   final supabase = Supabase.instance.client;
-  final _measurementController = TextEditingController();
+  final _heightController = TextEditingController();
+  final _lengthController = TextEditingController();
+  final _shoulderController = TextEditingController();
   final _amountController = TextEditingController();
 
   @override
@@ -49,7 +50,6 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
     }
   }
 
-  // 🆕 Add Tailor
   Future<void> _addNewTailor() async {
     final nameController = TextEditingController();
     final shopController = TextEditingController();
@@ -89,7 +89,6 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
     );
   }
 
-  // 🆕 Add Service (safe for missing 'type' / 'title')
   Future<void> _addNewService() async {
     final titleController = TextEditingController();
     final priceController = TextEditingController();
@@ -111,20 +110,17 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
             onPressed: () async {
               if (titleController.text.isEmpty) return;
               try {
-                // ✅ prepare data without forcing 'type' column
                 final insertData = {
                   'price': double.tryParse(priceController.text) ?? 0,
                   'created_at': DateTime.now().toIso8601String(),
                 };
 
-                // optional columns (only if they exist in table)
                 if (_services.isNotEmpty && _services.first.containsKey('title')) {
                   insertData['title'] = titleController.text;
                 } else if (_services.isNotEmpty && _services.first.containsKey('name')) {
                   insertData['name'] = titleController.text;
                 }
 
-                // add order_type only if your table has 'type' column
                 if (_services.isNotEmpty && _services.first.containsKey('type')) {
                   insertData['type'] = _orderType;
                 }
@@ -165,6 +161,10 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
       return;
     }
 
+    // ✅ Combine height, length, and shoulder
+    _measurements =
+        "Height: ${_heightController.text}, Length: ${_lengthController.text}, Shoulder: ${_shoulderController.text}";
+
     setState(() => _loading = true);
 
     final selectedService = _services.firstWhere(
@@ -201,15 +201,6 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Create order failed: $e')));
     } finally {
       setState(() => _loading = false);
-    }
-  }
-
-  void _onMeasurementsChanged(String text) {
-    try {
-      final parsed = jsonDecode(text);
-      if (parsed is Map<String, dynamic>) _measurements = parsed;
-    } catch (_) {
-      _measurements = null;
     }
   }
 
@@ -304,18 +295,31 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    TextFormField(
-                      controller: _measurementController,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        labelText: 'Measurements (JSON)',
-                        helperText: '{"height": 36, "length": 28}',
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: _onMeasurementsChanged,
+                    // ✅ Separate Measurement Inputs
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Measurements', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _heightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Height (in inches/cm)', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _lengthController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Length (in inches/cm)', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _shoulderController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'Shoulder (in inches/cm)', border: OutlineInputBorder()),
+                    ),
 
+                    const SizedBox(height: 12),
                     TextFormField(
                       controller: _amountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),

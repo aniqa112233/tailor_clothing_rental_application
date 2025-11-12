@@ -17,24 +17,19 @@ class OrderProvider with ChangeNotifier {
   Future<void> fetchOrdersForUser(String userId) async {
     try {
       _loading = true;
-      // ✅ Delay notifyListeners until after build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         notifyListeners();
       });
 
-      final res = await supabase
+      final List<dynamic> res = await supabase
           .from('orders')
           .select('*')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      if (res is List) {
-        _orders = res.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
-      }
+      _orders = res.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      if (kDebugMode) {
-        print('fetchOrdersForUser error: $e');
-      }
+      if (kDebugMode) print('fetchOrdersForUser error: $e');
       rethrow;
     } finally {
       _loading = false;
@@ -52,19 +47,15 @@ class OrderProvider with ChangeNotifier {
         notifyListeners();
       });
 
-      final res = await supabase
+      final List<dynamic> res = await supabase
           .from('orders')
           .select('*')
           .eq('tailor_id', tailorId)
           .order('created_at', ascending: false);
 
-      if (res is List) {
-        _orders = res.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
-      }
+      _orders = res.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      if (kDebugMode) {
-        print('fetchOrdersForTailor error: $e');
-      }
+      if (kDebugMode) print('fetchOrdersForTailor error: $e');
       rethrow;
     } finally {
       _loading = false;
@@ -77,15 +68,18 @@ class OrderProvider with ChangeNotifier {
   /// Get order details by ID
   Future<OrderModel?> getOrderById(String id) async {
     try {
-      final res = await supabase.from('orders').select('*').eq('id', id).single();
+      final dynamic res = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', id)
+          .single();
+
       if (res is Map) {
         return OrderModel.fromJson(res as Map<String, dynamic>);
       }
       return null;
     } catch (e) {
-      if (kDebugMode) {
-        print('getOrderById error: $e');
-      }
+      if (kDebugMode) print('getOrderById error: $e');
       rethrow;
     }
   }
@@ -93,7 +87,9 @@ class OrderProvider with ChangeNotifier {
   /// Create a new order
   Future<void> createOrder(OrderModel order) async {
     try {
-      final res = await supabase.from('orders').insert(order.toJson()).select().single();
+      final dynamic res =
+          await supabase.from('orders').insert(order.toJson()).select().single();
+
       if (res is Map) {
         final created = OrderModel.fromJson(res as Map<String, dynamic>);
         _orders.insert(0, created);
@@ -102,9 +98,7 @@ class OrderProvider with ChangeNotifier {
         });
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('createOrder error: $e');
-      }
+      if (kDebugMode) print('createOrder error: $e');
       rethrow;
     }
   }
@@ -112,7 +106,7 @@ class OrderProvider with ChangeNotifier {
   /// Update the status of an order
   Future<void> updateOrderStatus(String orderId, String status) async {
     try {
-      final res = await supabase
+      final dynamic res = await supabase
           .from('orders')
           .update({
             'status': status,
@@ -131,9 +125,7 @@ class OrderProvider with ChangeNotifier {
         });
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('updateOrderStatus error: $e');
-      }
+      if (kDebugMode) print('updateOrderStatus error: $e');
       rethrow;
     }
   }
