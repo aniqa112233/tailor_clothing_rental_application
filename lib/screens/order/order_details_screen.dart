@@ -57,6 +57,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ignore: unused_local_variable
     final df = DateFormat.yMMMd().add_jm();
     final currentUser = supabase.auth.currentUser;
 

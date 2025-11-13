@@ -77,7 +77,7 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
               }).select().single();
 
               setState(() {
-                _tailors.add(insert as Map<String, dynamic>);
+                _tailors.add(insert);
                 _selectedTailorId = insert['id'].toString();
               });
               Navigator.pop(context);
@@ -128,7 +128,7 @@ class _OrderCreateScreenState extends State<OrderCreateScreen> {
                 final insert = await supabase.from('services').insert(insertData).select().single();
 
                 setState(() {
-                  _services.add(insert as Map<String, dynamic>);
+                  _services.add(insert);
                   _selectedServiceId = insert['id'].toString();
                 });
               } catch (e) {

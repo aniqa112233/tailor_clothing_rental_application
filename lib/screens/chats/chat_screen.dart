@@ -88,6 +88,7 @@ class _ChatScreenState extends State<ChatScreen> {
           .eq('order_id', widget.orderId)
           .order('created_at', ascending: true);
 
+      // ignore: unnecessary_null_comparison
       if (response != null) {
         setState(() {
           _messages = List<Map<String, dynamic>>.from(response);
@@ -108,6 +109,7 @@ class _ChatScreenState extends State<ChatScreen> {
       table: 'messages',
       callback: (payload) {
         final newMsg = payload.newRecord;
+        // ignore: unnecessary_null_comparison
         if (newMsg != null &&
             newMsg['order_id'] != null &&
             newMsg['order_id'] == widget.orderId) {
