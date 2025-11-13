@@ -31,12 +31,53 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sending = false;
   bool _uploadingImage = false;
   final ImagePicker _picker = ImagePicker();
+  String _receiverName = 'Chat'; // Default title
 
   @override
   void initState() {
     super.initState();
+    _fetchReceiverName();
     _fetchMessages();
     _subscribeToMessages();
+  }
+
+  // ✅ FIXED LOGIC for receiver name/email display
+  Future<void> _fetchReceiverName() async {
+    try {
+      final response = await supabase
+          .from('profiles')
+          .select('name, email')
+          .eq('id', widget.receiverId)
+          .maybeSingle();
+
+      if (response == null) {
+        setState(() => _receiverName = 'Unknown User');
+        return;
+      }
+
+      final name = (response['name'] as String?)?.trim();
+      final email = (response['email'] as String?)?.trim();
+
+      String finalName = 'Unknown User';
+
+      if (name != null && name.isNotEmpty) {
+        finalName = name;
+      } else if (email != null && email.isNotEmpty) {
+        // sirf @ se pehle ka part lo
+        var emailName = email.split('@').first;
+
+        // sirf alphabets rakho (digits remove)
+        emailName = emailName.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+
+        // agar empty ho gaya to fallback
+        finalName = emailName.isNotEmpty ? emailName : 'User';
+      }
+
+      setState(() => _receiverName = finalName);
+    } catch (e) {
+      debugPrint('❌ Failed to fetch receiver name: $e');
+      setState(() => _receiverName = 'Unknown User');
+    }
   }
 
   Future<void> _fetchMessages() async {
@@ -76,8 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _scrollToBottom();
         }
       },
-    )
-        .subscribe();
+    ).subscribe();
   }
 
   void _scrollToBottom() {
@@ -329,7 +369,13 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
+      appBar: AppBar(
+        title: Text(
+          _receiverName,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.blueAccent,
+      ),
       body: SafeArea(
         child: Column(
           children: [
