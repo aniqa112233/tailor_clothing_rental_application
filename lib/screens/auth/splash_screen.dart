@@ -62,11 +62,11 @@ class _SplashScreenState extends State<SplashScreen> {
                     color: AppTheme.accent, size: 80),
                 const SizedBox(height: 20),
                 Text(
-                  "ANGEL SURE",
+                  "Tailor Clothing Application",
                   style: TextStyle(
                     color: AppTheme.primary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 26,
+                    fontSize: 20,
                   ),
                 ),
               ],

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../models/order_model.dart';
 import 'package:intl/intl.dart';
+import '../utils/app_theme.dart';
 
 class OrderCard extends StatelessWidget {
   final OrderModel order;
@@ -16,7 +17,7 @@ class OrderCard extends StatelessWidget {
       case 'Ready':
         return Colors.green;
       case 'Delivered':
-        return Colors.grey;
+        return AppTheme.accent; // Light green same as tick icon
       case 'Cancelled':
         return Colors.red;
       default:

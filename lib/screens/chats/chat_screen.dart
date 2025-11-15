@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tailor_clothing_application/utils/app_theme.dart';
 import 'package:tailor_clothing_application/utils/profile_helper.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -371,39 +372,64 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
         title: Text(
           _receiverName,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.blueAccent,
+        centerTitle: true,
+        backgroundColor: AppTheme.primary,
+        elevation: 0,
       ),
       body: SafeArea(
         child: Column(
           children: [
             if (_uploadingImage)
               Container(
-                color: Colors.blue.withOpacity(0.1),
-                padding: const EdgeInsets.all(8),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.primary.withOpacity(0.15), AppTheme.primary.withOpacity(0.05)],
+                  ),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2)),
-                    SizedBox(width: 10),
-                    Text("Sending image...",
-                        style: TextStyle(color: Colors.blueAccent)),
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      "Sending image...",
+                      style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600),
+                    ),
                   ],
                 ),
               ),
             Expanded(
               child: _messages.isEmpty
-                  ? const Center(child: Text('No messages yet'))
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No messages yet',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    )
                   : ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(12),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
                         final msg = _messages[index];
@@ -413,59 +439,63 @@ class _ChatScreenState extends State<ChatScreen> {
                           DateTime.tryParse(createdAt) ?? DateTime.now(),
                         );
 
+                        final bubbleColor = isMe ? AppTheme.primary : Colors.white;
+                        final textColor = isMe ? Colors.white : Colors.black87;
+                        final timeColor = isMe ? Colors.white70 : Colors.black54;
+
                         return GestureDetector(
                           onTap: () => _showMessageOptions(msg),
                           child: Column(
-                            crossAxisAlignment: isMe
-                                ? CrossAxisAlignment.end
-                                : CrossAxisAlignment.start,
+                            crossAxisAlignment:
+                                isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
                               Align(
-                                alignment: isMe
-                                    ? Alignment.centerRight
-                                    : Alignment.centerLeft,
+                                alignment:
+                                    isMe ? Alignment.centerRight : Alignment.centerLeft,
                                 child: Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 4),
-                                  padding: const EdgeInsets.all(10),
+                                  margin: const EdgeInsets.symmetric(vertical: 6),
+                                  padding: const EdgeInsets.all(12),
+                                  constraints: const BoxConstraints(maxWidth: 280),
                                   decoration: BoxDecoration(
-                                    color: isMe
-                                        ? Colors.blueAccent
-                                        : Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(10),
+                                    color: bubbleColor,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: const Radius.circular(16),
+                                      topRight: const Radius.circular(16),
+                                      bottomLeft: Radius.circular(isMe ? 16 : 4),
+                                      bottomRight: Radius.circular(isMe ? 4 : 16),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      if ((msg['image_url'] ?? '')
-                                          .toString()
-                                          .isNotEmpty)
+                                      if ((msg['image_url'] ?? '').toString().isNotEmpty)
                                         ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(12),
                                           child: Image.network(
                                             msg['image_url'],
-                                            width: 200,
-                                            height: 200,
+                                            width: 220,
+                                            height: 220,
                                             fit: BoxFit.cover,
                                             errorBuilder: (_, __, ___) =>
                                                 const Icon(Icons.broken_image),
                                           ),
                                         ),
-                                      if ((msg['message'] ?? '')
-                                          .toString()
-                                          .isNotEmpty)
+                                      if ((msg['message'] ?? '').toString().isNotEmpty)
                                         Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 5),
+                                          padding: const EdgeInsets.only(top: 6),
                                           child: Text(
                                             msg['message'],
                                             style: TextStyle(
-                                              color: isMe
-                                                  ? Colors.white
-                                                  : Colors.black87,
+                                              color: textColor,
                                               fontSize: 15,
+                                              height: 1.4,
                                             ),
                                           ),
                                         ),
@@ -473,9 +503,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       Text(
                                         time,
                                         style: TextStyle(
-                                          color: isMe
-                                              ? Colors.white70
-                                              : Colors.black54,
+                                          color: timeColor,
                                           fontSize: 10,
                                         ),
                                       ),
@@ -486,13 +514,27 @@ class _ChatScreenState extends State<ChatScreen> {
                               if ((msg['reaction'] ?? '').toString().isNotEmpty)
                                 Padding(
                                   padding: EdgeInsets.only(
-                                    top: 3,
-                                    left: isMe ? 0 : 12,
-                                    right: isMe ? 12 : 0,
+                                    top: 2,
+                                    left: isMe ? 0 : 16,
+                                    right: isMe ? 16 : 0,
                                   ),
-                                  child: Text(
-                                    msg['reaction'],
-                                    style: const TextStyle(fontSize: 22),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      msg['reaction'],
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
                                   ),
                                 ),
                             ],
@@ -502,48 +544,99 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
             ),
             Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
               child: SafeArea(
+                top: false,
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.photo_camera),
-                      color: Colors.blueAccent,
-                      onPressed: _uploadingImage
-                          ? null
-                          : () => _pickAndUploadImage(ImageSource.camera),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.image),
-                      color: Colors.blueAccent,
-                      onPressed: _uploadingImage
-                          ? null
-                          : () => _pickAndUploadImage(ImageSource.gallery),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _msgController,
-                        textInputAction: TextInputAction.send,
-                        decoration: const InputDecoration(
-                          hintText: 'Type a message...',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                          contentPadding:
-                              EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        ),
-                        onSubmitted: (_) => _sendMessage(),
-                      ),
+                    _buildMediaButton(
+                      icon: Icons.add_a_photo,
+                      onPressed: _uploadingImage ? null : _showImagePickerSheet,
                     ),
                     const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.send),
-                      color: _sending ? Colors.grey : Colors.blueAccent,
-                      onPressed: _sending ? null : _sendMessage,
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.background,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: TextField(
+                          controller: _msgController,
+                          textInputAction: TextInputAction.send,
+                          decoration: const InputDecoration(
+                            hintText: 'Type a message...',
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: (_) => _sendMessage(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor:
+                          _sending ? Colors.grey[400] : AppTheme.accent,
+                      child: IconButton(
+                        icon: const Icon(Icons.send, color: Colors.white),
+                        onPressed: _sending ? null : _sendMessage,
+                      ),
                     ),
                   ],
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaButton({required IconData icon, VoidCallback? onPressed}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: AppTheme.primary),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  void _showImagePickerSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadImage(ImageSource.gallery);
+              },
             ),
           ],
         ),
