@@ -26,7 +26,6 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
     _fetchProcessedDesigns();
   }
 
-  // 🔹 Fetch pending designs
   Future<void> _fetchPendingDesigns() async {
     try {
       setState(() => loading = true);
@@ -47,7 +46,6 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
     }
   }
 
-  // 🔹 Fetch approved/rejected designs
   Future<void> _fetchProcessedDesigns() async {
     try {
       final response = await supabase
@@ -60,12 +58,11 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
         processedDesigns = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error fetching processed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching processed: $e')));
     }
   }
 
-  // 🔹 Approve selected design
   Future<void> _approveDesign(String id) async {
     try {
       await supabase
@@ -84,7 +81,6 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
     }
   }
 
-  // 🔹 Reject selected design
   Future<void> _rejectDesign(String id) async {
     try {
       await supabase
@@ -103,7 +99,6 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
     }
   }
 
-  // 🔹 Card widget for each design
   Widget _buildDesignCard(Map<String, dynamic> design,
       {bool showActions = true}) {
     final status = design['status'] ?? '';
@@ -211,13 +206,26 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Approve Custom Designs'),
+
+        // ⭐⭐ SAME TABBAR STYLE AS REVIEWS SCREEN ⭐⭐
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(text: 'Pending'),
             Tab(text: 'Approved / Rejected'),
           ],
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          indicator: BoxDecoration(
+            color: Colors.white.withOpacity(0.18),
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
+
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -231,7 +239,6 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          // 🔸 Pending tab
           loading
               ? const Center(child: CircularProgressIndicator())
               : pendingDesigns.isEmpty
@@ -249,8 +256,6 @@ class _ApproveDesignsScreenState extends State<ApproveDesignsScreen>
                         showActions: true,
                       ),
                     ),
-
-          // 🔸 Approved/Rejected tab
           processedDesigns.isEmpty
               ? const Center(
                   child: Text(

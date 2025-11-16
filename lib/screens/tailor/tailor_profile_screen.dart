@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/tailor_provider.dart';
 import '../../widgets/primary_button.dart';
+import '../../utils/app_theme.dart';
 import '../auth/login_screen.dart'; // 👈 make sure correct import path ho
 
 class TailorProfileScreen extends StatefulWidget {
@@ -132,7 +132,13 @@ class _TailorProfileScreenState extends State<TailorProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tailor Profile'),
+        title: const Text(
+          'Tailor Profile',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -142,23 +148,44 @@ class _TailorProfileScreenState extends State<TailorProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            const SizedBox(height: 20),
             // Profile Picture Section
             Stack(
               children: [
-                CircleAvatar(
-                  radius: 55,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: _profileImage != null
-                      ? FileImage(_profileImage!)
-                      : (_profileImageUrl != null && _profileImageUrl!.isNotEmpty
-                          ? NetworkImage(_profileImageUrl!) as ImageProvider
-                          : null),
-                  child: (_profileImage == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty))
-                      ? const Icon(Icons.person, size: 55, color: Colors.white70)
-                      : null,
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppTheme.primary,
+                      width: 4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withOpacity(0.3),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 65,
+                    backgroundColor: AppTheme.primary.withOpacity(0.1),
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : (_profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                            ? NetworkImage(_profileImageUrl!) as ImageProvider
+                            : null),
+                    child: (_profileImage == null && (_profileImageUrl == null || _profileImageUrl!.isEmpty))
+                        ? Icon(
+                            Icons.person,
+                            size: 65,
+                            color: AppTheme.primary.withOpacity(0.5),
+                          )
+                        : null,
+                  ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -180,51 +207,158 @@ class _TailorProfileScreenState extends State<TailorProfileScreen> {
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(value: 'camera', child: Text('Take Photo')),
-                      const PopupMenuItem(value: 'gallery', child: Text('Choose from Gallery')),
-                      const PopupMenuItem(value: 'delete', child: Text('Remove Photo')),
+                      const PopupMenuItem(
+                        value: 'camera',
+                        child: Row(
+                          children: [
+                            Icon(Icons.camera_alt, size: 20),
+                            SizedBox(width: 8),
+                            Text('Take Photo'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'gallery',
+                        child: Row(
+                          children: [
+                            Icon(Icons.photo_library, size: 20),
+                            SizedBox(width: 8),
+                            Text('Choose from Gallery'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 20, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
                     ],
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppTheme.accent, AppTheme.accent.withOpacity(0.8)],
+                        ),
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.accent.withOpacity(0.4),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(Icons.camera_alt, color: Colors.white),
+                      padding: const EdgeInsets.all(12),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 22),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
 
-            TextField(
-              controller: _shopNameC,
-              decoration: const InputDecoration(labelText: 'Shop Name'),
+            // Form Fields Section with Card
+            Card(
+              elevation: 4,
+              shadowColor: Colors.black.withOpacity(0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.store,
+                          color: AppTheme.primary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Shop Information',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _shopNameC,
+                      decoration: InputDecoration(
+                        labelText: 'Shop Name',
+                        prefixIcon: Icon(Icons.business, color: AppTheme.primary),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _serviceC,
+                      decoration: InputDecoration(
+                        labelText: 'Services (comma separated)',
+                        prefixIcon: Icon(Icons.design_services, color: AppTheme.primary),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _areaC,
+                      decoration: InputDecoration(
+                        labelText: 'Delivery Area',
+                        prefixIcon: Icon(Icons.location_on, color: AppTheme.primary),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _serviceC,
-              decoration: const InputDecoration(labelText: 'Services (comma separated)'),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _areaC,
-              decoration: const InputDecoration(labelText: 'Delivery Area'),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
 
             PrimaryButton(
               label: 'Update Profile',
               loading: tailor.loading,
               onPressed: _saveProfile,
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 }
-

@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../utils/app_theme.dart';
@@ -73,16 +74,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           ),
 
-          // Bottom Arrow Button
-          Positioned(
-            bottom: 50,
-            right: 30,
-            child: CircleAvatar(
-              radius: 24,
-              backgroundColor: AppTheme.accent,
-              child: const Icon(Icons.arrow_forward_ios, color: Colors.white),
-            ),
-          ),
+          // ❌ BOTTOM ARROW BUTTON REMOVED
         ],
       ),
     );

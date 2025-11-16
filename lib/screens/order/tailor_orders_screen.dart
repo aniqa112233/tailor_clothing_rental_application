@@ -77,14 +77,26 @@ class _TailorOrdersScreenState extends State<TailorOrdersScreen>
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Customer Orders'),
-          bottom: const TabBar(
-            indicatorColor: Colors.white,
-            tabs: [
+
+          // ⭐⭐ REVIEWS SCREEN WALA TABBAR DESIGN — EXACT SAME ⭐⭐
+          bottom: TabBar(
+            tabs: const [
               Tab(text: 'Pending Orders'),
               Tab(text: 'Completed Orders'),
             ],
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicatorPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            indicator: BoxDecoration(
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         ),
+
         body: _loading
             ? const Center(child: CircularProgressIndicator())
             : TabBarView(
